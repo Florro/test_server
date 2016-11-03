@@ -3,13 +3,33 @@ package main
 import (
     "log"
     "net/http"
-	"test_server"
+	"github.com/florro/test_server"
+	"fmt"
+	// tfs "github.com/florro/test_server/proto/tensorflow_serving"
+	tf "github.com/florro/test_server/proto/tensorflow"
+	// "github.com/golang/protobuf/proto"
 )
 
 func main() {
 
-    router := test_server.NewRouter()
+	tmp2 := tf.TensorProto {
+		TensorContent : []byte("shit"),
+	}
+	fmt.Println(tmp2)
 
+	test := &tf.TensorShapeProto_Dim{Name: "x", Size:128}
+	Dims := []*tf.TensorShapeProto_Dim{
+		test,
+	}
+
+	tmp := &tf.TensorShapeProto {
+		UnknownRank: true,
+		Dim : Dims,
+	}
+	fmt.Println(tmp)
+	fmt.Println("##########")
+
+    router := test_server.NewRouter()
     log.Fatal(http.ListenAndServe(":8080", router))
 }
 

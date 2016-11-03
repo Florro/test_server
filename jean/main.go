@@ -21,7 +21,8 @@ import (
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-	pb "google.golang.org/grpc/examples/helloworld/helloworld"
+	// pb "google.golang.org/grpc/examples/helloworld/helloworld"
+	pb "github.com/florro/test_server/proto/helloworld"
 )
 
 const (
