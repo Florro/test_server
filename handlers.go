@@ -15,6 +15,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/nfnt/resize"
+
+	tf "github.com/florro/test_server/proto/tensorflow"
 )
 
 func Index(w http.ResponseWriter, r *http.Request) {
@@ -121,4 +123,38 @@ func TodoCreate(w http.ResponseWriter, r *http.Request) {
     // if err := json.NewEncoder(w).Encode(t); err != nil {
     //     panic(err)
     // }
+}
+
+func SendImg(w http.ResponseWriter, r *http.Request) {
+
+    imgpath := "/home/jean/Bilder/Wallpapers/affe.JPG"
+    file, err := os.Open(imgpath)
+    if err!= nil{
+        log.Fatal(err)
+    }
+
+    buffer := new(bytes.Buffer)
+    if _, err := io.Copy(buffer,file); err!=nil{
+        log.Fatal(err)
+    }
+
+
+
+	dim := &tf.TensorShapeProto_Dim{Name: "x", Size:1}
+	Dims := []*tf.TensorShapeProto_Dim{
+		dim,
+	}
+
+	Shape := &tf.TensorShapeProto {
+		Dim : Dims,
+	}
+
+	tensor := tf.TensorProto {
+		TensorContent : buffer.Bytes(),
+        TensorShape : Shape,
+        Dtype : 7,
+	}
+
+	fmt.Println(tensor)
+	fmt.Println("##########")
 }
