@@ -15,8 +15,13 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/nfnt/resize"
+	// "github.com/golang/protobuf/proto"
+	// "github.com/golang/protobuf/jsonpb"
 
 	tf "github.com/florro/test_server/proto/tensorflow"
+	pb "github.com/florro/test_server/proto/tensorflow_serving"
+	"google.golang.org/grpc"
+	"golang.org/x/net/context"
 )
 
 func Index(w http.ResponseWriter, r *http.Request) {
@@ -127,7 +132,7 @@ func TodoCreate(w http.ResponseWriter, r *http.Request) {
 
 func SendImg(w http.ResponseWriter, r *http.Request) {
 
-    imgpath := "/home/jean/Bilder/Wallpapers/affe.JPG"
+    imgpath := "/home/florian/Downloads/affe.jpg"
     file, err := os.Open(imgpath)
     if err!= nil{
         log.Fatal(err)
@@ -137,24 +142,56 @@ func SendImg(w http.ResponseWriter, r *http.Request) {
     if _, err := io.Copy(buffer,file); err!=nil{
         log.Fatal(err)
     }
-
-
-
-	dim := &tf.TensorShapeProto_Dim{Name: "x", Size:1}
-	Dims := []*tf.TensorShapeProto_Dim{
-		dim,
-	}
+	var tmp = [][]byte{buffer.Bytes()}
+	// var buffer_test = [][]byte{[]byte("teststhi"), []byte("testagaine")}
 
 	Shape := &tf.TensorShapeProto {
-		Dim : Dims,
+		Dim : []*tf.TensorShapeProto_Dim {
+			&tf.TensorShapeProto_Dim{ Name : "x", Size : 1},
+		},
 	}
 
-	tensor := tf.TensorProto {
-		TensorContent : buffer.Bytes(),
+	tensor := &tf.TensorProto {
+		// TensorContent : buffer.Bytes(),
+		StringVal : tmp,
         TensorShape : Shape,
-        Dtype : 7,
+        // Dtype : 7,
+        Dtype : tf.DataType_DT_STRING,
 	}
 
-	fmt.Println(tensor)
 	fmt.Println("##########")
+
+	// conn, err := grpc.Dial("192.168.1.7:9000", grpc.WithInsecure())
+	conn, err := grpc.Dial("localhost:9000", grpc.WithInsecure())
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer conn.Close()
+
+	shit := make(map[string]*tf.TensorProto)
+	shit["images"] = tensor
+
+	req := &pb.PredictRequest {
+		ModelSpec : &pb.ModelSpec{ Name : "inception" },
+		Inputs : shit,
+		// OutputFilter : []string{"logits"},
+		// Inputs : 
+	}
+
+	// fmt.Println(req)
+	var client = pb.NewPredictionServiceClient(conn)
+	feature, err := client.Predict(context.Background(), req)
+	if err != nil {
+		fmt.Println(grpc.ErrorDesc(err))
+		log.Fatal(err)
+	}
+
+	fmt.Println(string(feature.Outputs["classes"].StringVal[0]))
+	for i, xx := range(feature.Outputs["classes"].StringVal) {
+		fmt.Printf("Num: %v, Class: %s\n", i, xx)
+	}
+	for i, xx := range(feature.Outputs["scores"].FloatVal) {
+		fmt.Printf("Num: %v, Class: %v\n", i, xx)
+	}
+
 }
