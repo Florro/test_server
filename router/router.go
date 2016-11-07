@@ -1,9 +1,10 @@
-package test_server
+package router
 
 import (
     "net/http"
 
     "github.com/gorilla/mux"
+    "github.com/florro/test_server/logger"
 )
 
 func NewRouter() *mux.Router {
@@ -11,7 +12,7 @@ func NewRouter() *mux.Router {
     for _, route := range routes {
         var handler http.Handler
         handler = route.HandlerFunc
-        handler = Logger(handler, route.Name)
+        handler = logger.Logger(handler, route.Name)
 
         router.
             Methods(route.Method).

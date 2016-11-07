@@ -1,6 +1,9 @@
-package test_server
+package router
 
-import "net/http"
+import (
+    "net/http"
+	"github.com/florro/test_server/handlers"
+)
 
 type Route struct {
     Name        string
@@ -16,30 +19,30 @@ var routes = Routes{
         "Index",
         "GET",
         "/",
-        Index,
+        handlers.Index,
     },
     Route{
         "TodoIndex",
         "GET",
         "/todos",
-        TodoIndex,
+        handlers.TodoIndex,
     },
     Route{
         "TodoShow",
         "GET",
         "/todos/{todoId}",
-        TodoShow,
+        handlers.TodoShow,
     },
 	Route{
 		"TodoCreate",
 		"POST",
 		"/todos",
-		TodoCreate,
+		handlers.TodoCreate,
 	},
     Route{
         "TfTest",
         "GET",
         "/tf",
-        SendImg,
+        handlers.SendImg,
     },
 }
