@@ -5,19 +5,21 @@ import (
     "net/http"
     "time"
     "github.com/auth0/go-jwt-middleware"
-    // "encoding/base64"
-    // "os"
+    "encoding/base64"
+    "os"
 )
+
+//TODO https://auth0.com/docs/api-auth/config/using-the-auth0-dashboard
 
 var JwtMiddleware = jwtmiddleware.New(jwtmiddleware.Options{
     ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
         //get auth0 client secret secret from env variable
-        // decoded, err := base64.URLEncoding.DecodeString(os.Getenv("AUTH0_CLIENT_SECRET"))
-        // if err != nil {
-        //     return nil, err
-        // }
-        // return decoded, nil
-        return mySigningKey, nil
+        decoded, err := base64.URLEncoding.DecodeString(os.Getenv("AUTH0_CLIENT_SECRET"))
+        if err != nil {
+            return nil, err
+        }
+        return decoded, nil
+        // return mySigningKey, nil
     },
     SigningMethod: jwt.SigningMethodHS256,
 })

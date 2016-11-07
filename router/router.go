@@ -9,6 +9,8 @@ import (
 
 func NewRouter() *mux.Router {
     router := mux.NewRouter().StrictSlash(true)
+
+    //API Routes
     for _, route := range routes {
         var handler http.Handler
         handler = route.HandlerFunc
@@ -25,6 +27,12 @@ func NewRouter() *mux.Router {
 
     //Add get token path
     router.Methods("GET").Path("/get-token").Handler(handlers.Logger(handlers.GetTokenHandler, "Token"))
+    //Index route
+    router.Methods("GET").Path("/").Handler(http.FileServer(http.Dir("./views/")))
+    // We will setup our server so we can serve static assest like images, 
+    // css from the /static/{file} route
+    router.PathPrefix("/static/").Handler(http.StripPrefix("/static/",
+        http.FileServer(http.Dir("./static/"))))
 
     return router
 }

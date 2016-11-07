@@ -1,1 +1,3 @@
 *.tags
+*auth0-variables.js
+*.env
