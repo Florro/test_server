@@ -19,8 +19,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/nfnt/resize"
-	// "github.com/golang/protobuf/proto"
-	// "github.com/golang/protobuf/jsonpb"
 
 	tf "github.com/florro/test_server/proto/tensorflow"
 	pb "github.com/florro/test_server/proto/tensorflow_serving"
@@ -286,3 +284,7 @@ func SendImgwithTemplate(w http.ResponseWriter, r *http.Request) {
         // }
     }
 }
+
+var NotImplemented = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){
+  w.Write([]byte("Not Implemented"))
+})

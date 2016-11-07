@@ -4,7 +4,7 @@ import (
     "net/http"
 
     "github.com/gorilla/mux"
-    "github.com/florro/test_server/logger"
+    "github.com/florro/test_server/handlers"
 )
 
 func NewRouter() *mux.Router {
@@ -12,7 +12,8 @@ func NewRouter() *mux.Router {
     for _, route := range routes {
         var handler http.Handler
         handler = route.HandlerFunc
-        handler = logger.Logger(handler, route.Name)
+        handler = handlers.Logger(handler, route.Name)
+        handler = handlers.JwtMiddleware.Handler(handler) //lol
 
         router.
             Methods(route.Method).
@@ -21,5 +22,9 @@ func NewRouter() *mux.Router {
             Handler(handler)
 
     }
+
+    //Add get token path
+    router.Methods("GET").Path("/get-token").Handler(handlers.Logger(handlers.GetTokenHandler, "Token"))
+
     return router
 }
