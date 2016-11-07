@@ -13,8 +13,8 @@ func main() {
 
 
     router := test_server.NewRouter()
-    log.Fatal(http.ListenAndServe(":8080", router))
-    // log.Fatal(http.ListenAndServeTLS(":9000", "../ssl/localhost/server.crt", "../ssl/localhost/server.key", router))
+    // log.Fatal(http.ListenAndServe(":8080", router))
+    log.Fatal(http.ListenAndServeTLS(":8080", "../ssl/localhost/server.crt", "../ssl/localhost/server.key", router))
 }
 
 ////////////////////////////////////////////////////

@@ -8,29 +8,13 @@ import (
     "mime/multipart"
     "net/http"
     "os"
+    "crypto/tls"
+    "crypto/x509"
+    "log"
+    "flag"
 )
 
-// import (
-// 	"fmt"
-// 	"net/http"
-// 	"io/ioutil"
-// )
-
-// func main() {
-// 	resp, err := http.Get("http://localhost:8080/todos")
-// 	if err != nil {
-// 		fmt.Println("ERROR")
-// 	}
-// 	defer resp.Body.Close()
-// 	body, err := ioutil.ReadAll(resp.Body)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	fmt.Println(body)
-// 	fmt.Println("############################")
-// }
-
-func postFile(filename string, targetUrl string) error {
+func postFile(client *http.Client, filename string, targetUrl string) error {
     bodyBuf := &bytes.Buffer{}
     bodyWriter := multipart.NewWriter(bodyBuf)
 
@@ -61,7 +45,8 @@ func postFile(filename string, targetUrl string) error {
 	fmt.Println(contentType)
 	fmt.Println("--------")
 
-    resp, err := http.Post(targetUrl, contentType, bodyBuf)
+
+    resp, err := client.Post(targetUrl, contentType, bodyBuf)
     if err != nil {
         return err
     }
@@ -77,8 +62,40 @@ func postFile(filename string, targetUrl string) error {
     return nil
 }
 
+func getTLSclient(path string) *http.Client{
+
+    caCert, err := ioutil.ReadFile(path + "/ca.crt")
+    if err != nil {
+        log.Fatal(err)
+    }
+    caCertPool := x509.NewCertPool()
+    caCertPool.AppendCertsFromPEM(caCert)
+
+    tlsConfig := &tls.Config{
+        RootCAs:    caCertPool,
+    }
+    tlsConfig.BuildNameToCertificate()
+    transport := &http.Transport{TLSClientConfig: tlsConfig}
+    client :=&http.Client{Transport: transport}
+
+    return client
+}
+
 func main() {
-	target_url := "http://localhost:8080/todos"
-	filename := "/home/florian/Downloads/affe.jpg"
-	postFile(filename, target_url)
+
+    var tls = flag.Bool("tls", false, "bool for tls usage")
+    flag.Parse()
+
+	filename := os.Getenv("HOME") + "/Bilder/affe.jpg"
+
+    var client *http.Client
+    var target_url string
+    if *tls == false {
+        client = &http.Client{}
+        target_url = "http://localhost:8080/todos"
+    } else {
+        client = getTLSclient("../ssl/localhost")
+        target_url = "https://localhost:8080/todos"
+    }
+	postFile(client, filename, target_url)
 }

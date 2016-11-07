@@ -91,7 +91,7 @@ func TodoCreate(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(jpg_name[len(jpg_name)-1])
 	var name string = jpg_name[len(jpg_name)-1]
 
-	f, err := os.OpenFile("/home/florian/" + name, os.O_WRONLY|os.O_CREATE, 0666)
+	f, err := os.OpenFile(os.Getenv("HOME") +"/"+ name, os.O_WRONLY|os.O_CREATE, 0666)
 	if err != nil {
 		panic(err)
 	}
@@ -132,7 +132,7 @@ func TodoCreate(w http.ResponseWriter, r *http.Request) {
 
 func SendImg(w http.ResponseWriter, r *http.Request) {
 
-    imgpath := "/home/florian/Downloads/affe.jpg"
+    imgpath := os.Getenv("HOME") + "/Bilder/affe.jpg"
     file, err := os.Open(imgpath)
     if err!= nil{
         log.Fatal(err)
