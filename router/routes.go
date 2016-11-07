@@ -45,4 +45,16 @@ var routes = Routes{
         "/tf",
         handlers.SendImg,
     },
+    Route{
+        "TFTest2",
+        "GET",
+        "/tf2",
+        handlers.SendImgwithTemplate,
+    },
+    Route{
+        "TFTest2",
+        "POST",
+        "/tf2",
+        handlers.SendImgwithTemplate,
+    },
 }

@@ -1,9 +1,11 @@
 package handlers
 
+//TODO correct logging
 import (
 	"encoding/json"
-	"fmt"
+    "crypto/md5"
 	"net/http"
+	"fmt"
 	"io"
 	// "io/ioutil"
 	"os"
@@ -12,6 +14,8 @@ import (
 	"strings"
 	"strconv"
 	"log"
+    "html/template"
+    "time"
 
 	"github.com/gorilla/mux"
 	"github.com/nfnt/resize"
@@ -20,6 +24,7 @@ import (
 
 	tf "github.com/florro/test_server/proto/tensorflow"
 	pb "github.com/florro/test_server/proto/tensorflow_serving"
+	"github.com/florro/test_server/templates"
 	"google.golang.org/grpc"
 	"golang.org/x/net/context"
 )
@@ -130,6 +135,32 @@ func TodoCreate(w http.ResponseWriter, r *http.Request) {
     // }
 }
 
+func makePredRequestfromImgBuffer(buf *bytes.Buffer) *pb.PredictRequest{
+	var tmp = [][]byte{buf.Bytes()}
+	// var buffer_test = [][]byte{[]byte("teststhi"), []byte("testagaine")}
+
+	Shape := &tf.TensorShapeProto {
+		Dim : []*tf.TensorShapeProto_Dim {
+			&tf.TensorShapeProto_Dim{ Name : "x", Size : 1},
+		},
+	}
+
+	tensor := &tf.TensorProto {
+		StringVal : tmp,
+        TensorShape : Shape,
+        Dtype : tf.DataType_DT_STRING,
+	}
+
+	tmpmap := make(map[string]*tf.TensorProto)
+	tmpmap["images"] = tensor
+
+	req := &pb.PredictRequest {
+		ModelSpec : &pb.ModelSpec{ Name : "inception" },
+		Inputs : tmpmap,
+	}
+    return req
+}
+
 func SendImg(w http.ResponseWriter, r *http.Request) {
 
     imgpath := os.Getenv("HOME") + "/Bilder/affe.jpg"
@@ -142,41 +173,15 @@ func SendImg(w http.ResponseWriter, r *http.Request) {
     if _, err := io.Copy(buffer,file); err!=nil{
         log.Fatal(err)
     }
-	var tmp = [][]byte{buffer.Bytes()}
-	// var buffer_test = [][]byte{[]byte("teststhi"), []byte("testagaine")}
-
-	Shape := &tf.TensorShapeProto {
-		Dim : []*tf.TensorShapeProto_Dim {
-			&tf.TensorShapeProto_Dim{ Name : "x", Size : 1},
-		},
-	}
-
-	tensor := &tf.TensorProto {
-		// TensorContent : buffer.Bytes(),
-		StringVal : tmp,
-        TensorShape : Shape,
-        // Dtype : 7,
-        Dtype : tf.DataType_DT_STRING,
-	}
+    req := makePredRequestfromImgBuffer(buffer)
 
 	fmt.Println("##########")
 
-	// conn, err := grpc.Dial("192.168.1.7:9000", grpc.WithInsecure())
 	conn, err := grpc.Dial("localhost:9000", grpc.WithInsecure())
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer conn.Close()
-
-	shit := make(map[string]*tf.TensorProto)
-	shit["images"] = tensor
-
-	req := &pb.PredictRequest {
-		ModelSpec : &pb.ModelSpec{ Name : "inception" },
-		Inputs : shit,
-		// OutputFilter : []string{"logits"},
-		// Inputs : 
-	}
 
 	// fmt.Println(req)
 	var client = pb.NewPredictionServiceClient(conn)
@@ -194,4 +199,90 @@ func SendImg(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("Num: %v, Class: %v\n", i, xx)
 	}
 
+}
+
+func SendImgwithTemplate(w http.ResponseWriter, r *http.Request) {
+
+    fmt.Println("method:", r.Method)
+    if r.Method == "GET" {
+        crutime := time.Now().Unix()
+        //TODO ?
+        h := md5.New()
+        io.WriteString(h, strconv.FormatInt(crutime, 10))
+        token := fmt.Sprintf("%x", h.Sum(nil))
+
+        if t, err := template.New("UploadTemplate").Parse(templates.UploadTemplate); err!= nil {
+            log.Fatal(err)
+        } else {
+            t.Execute(w, token)
+        }
+    } else {
+        r.ParseMultipartForm(32 << 20)
+        file, _, err := r.FormFile("uploadfile")
+        if err != nil {
+            fmt.Println(err)
+            return
+        }
+        defer file.Close()
+
+        //modify img
+        // img, err := jpeg.Decode(file)
+        // img = resize.Resize(160, 0, img, resize.Lanczos3)
+        // defer file.Close()
+        // fmt.Fprintf(w, "%v", handler.Header)
+        // f, err := os.OpenFile("./test/"+handler.Filename, os.O_WRONLY|os.O_CREATE, 0666)
+        // if err != nil {
+        //     fmt.Println(err)
+        //     return
+        // }
+        // defer f.Close()
+        // buffer := new(bytes.Buffer)
+        // if err := jpeg.Encode(buffer, img, nil); err != nil {
+        //     log.Println("unable to encode image.")
+        // }
+
+        buffer := new(bytes.Buffer)
+        _, err = buffer.ReadFrom(file)
+        if err != nil {
+            log.Fatal(err)
+        }
+
+        //Create Request
+        req := makePredRequestfromImgBuffer(buffer)
+
+        //Create Stub
+        conn, err := grpc.Dial("localhost:9000", grpc.WithInsecure())
+        if err != nil {
+            log.Fatal(err)
+        }
+        defer conn.Close()
+
+        // fmt.Println(req)
+        var client = pb.NewPredictionServiceClient(conn)
+        feature, err := client.Predict(context.Background(), req)
+        if err != nil {
+            fmt.Println(grpc.ErrorDesc(err))
+            log.Fatal(err)
+        }
+
+        fmt.Println(string(feature.Outputs["classes"].StringVal[0]))
+        for i, xx := range(feature.Outputs["classes"].StringVal) {
+            fmt.Printf("Num: %v, Class: %s\n", i, xx)
+        }
+        for i, xx := range(feature.Outputs["scores"].FloatVal) {
+            fmt.Printf("Num: %v, Class: %v\n", i, xx)
+        }
+
+        //Show Image
+        w.Header().Set("Content-Type", "image/jpeg")
+        w.Header().Set("Content-Length", strconv.Itoa(len(buffer.Bytes())))
+        if _, err := w.Write(buffer.Bytes()); err != nil {
+            log.Println("unable to write image.")
+        }
+
+        //Save file
+        // if _, err := io.Copy(f, buffer); err != nil {
+        //     log.Fatal(err)
+        // }
+    }
 }
