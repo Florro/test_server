@@ -9,6 +9,7 @@ import (
 	"log"
 	"math/rand"
 	"net"
+	"time"
 )
 
 const (
@@ -26,6 +27,8 @@ func (s *server) Predict(ctx context.Context, req *pb.PredictRequest) (*pb.Predi
 	tmpmap := make(map[string]*tf.TensorProto)
 	tmpmap["bools"] = tensor
 	var resp = &pb.PredictResponse{Outputs: tmpmap}
+
+    time.Sleep(20 * time.Millisecond)
 
 	return resp, nil
 
@@ -58,6 +61,7 @@ func createrandomtensor(size int64) *tf.TensorProto {
 
 func main() {
 
+    rand.Seed(time.Now().UTC().UnixNano())
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)

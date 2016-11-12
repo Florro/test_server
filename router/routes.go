@@ -52,6 +52,18 @@ var routes = Routes{
         handlers.SendImgwithTemplate,
     },
     Route{
+        "Alltest",
+        "GET",
+        "/all",
+        handlers.SimilaritywithTemplate,
+    },
+    Route{
+        "Alltest",
+        "POST",
+        "/all",
+        handlers.SimilaritywithTemplate,
+    },
+    Route{
         "Test",
         "GET",
         "/test",
