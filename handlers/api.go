@@ -361,16 +361,20 @@ func SimilaritywithTemplate(w http.ResponseWriter, r *http.Request) {
 		// var ran int = rand.Int()
         var ran int = rand.Int()
 		resp, err := client2.Put(context.Background(),
-			&db.PutRequest{DbName: "test_char",
+			&db.PutRequest{DbName: "mock_char",
 				Key:  "char_a" + strconv.Itoa(ran),
 				Data: feature.Outputs["bools"].BoolVal})
 		fmt.Println("Put Respnse: ", resp, "err: ", err)
 
+        tim := time.Now()
 		resp2, err := client2.Search(context.Background(),
-			&db.SearchRequest{DbName: "test_char",
+			&db.SearchRequest{DbName: "mock_char",
 				Number: 10,
 				Data:   feature.Outputs["bools"].BoolVal})
 		fmt.Println("Search Response: ", resp2, "err: ", err)
+        fmt.Println("----------------")
+        fmt.Println(time.Since(tim))
+        fmt.Println("----------------")
 		// fmt.Println(string(feature.Outputs["classes"].StringVal[0]))
 		// for i, xx := range(feature.Outputs["classes"].StringVal) {
 		//     fmt.Printf("Num: %v, Class: %s\n", i, xx)
